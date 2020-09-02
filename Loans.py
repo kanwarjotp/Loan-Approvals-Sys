@@ -5,6 +5,11 @@ iBank Loan Approval System
 """
 
 from abc import ABCMeta, abstractmethod
+import json
+
+
+with open("approved_loans.json", "r") as f:
+    approved_loans_dict = json.load(f)
 
 
 class InvalidLoanType(Exception):
@@ -16,14 +21,17 @@ class InsufficientSalary(Exception):
 
 
 class Customer:
-    __customer_id_list = [1, 2, 3, 4, 5]
+    try:
+        __customer_id_last = int(max(approved_loans_dict.keys()))
+    except ValueError:
+        __customer_id_last = 0
 
     def __init__(self, loan_type, monthly_salary):
         self.__loan_type = loan_type
         self.__monthly_salary = monthly_salary
         self.__loan = None
-        self.__customer_id = Customer.__customer_id_list[-1] + 1
-        Customer.__customer_id_list.append(self.__customer_id)
+        self.__customer_id = Customer.__customer_id_last + 1
+        Customer.__customer_id_last += 1
 
     def apply_loan(self):
         if self.__loan_type in ("Home Loan", "Personal Loan"):
@@ -126,7 +134,6 @@ class PersonalLoan(Loan):
 try:
     print("Welcome to iBank")
     loan_type_ = input("Please choose your Loan Type:\n\tHome Loan\n\tPersonal Loan\n")
-    print(loan_type_)
     monthly_sal = eval(input("Please input your monthly salary(Rs.): "))
     customer_1 = Customer(loan_type_, monthly_sal)
     customer_1.apply_loan()
@@ -135,11 +142,12 @@ try:
                                                                      customer_1.get_loan_type(),
                                                                      customer_1.get_loan().get_loan_amount(),
                                                                      customer_1.get_loan().get_interest_rate()))
-    with open("approved_loans.txt", "a+") as f:
-        to_add = "{}\n{}\n{}\n{}\n\n".format(customer_1.get_customer_id(), customer_1.get_loan_type(),
-                                                   customer_1.get_loan().get_loan_amount(),
-                                                   customer_1.get_loan().get_interest_rate())
-        f.write(to_add)
+    with open("approved_loans.json", "w") as f:
+        to_add = [customer_1.get_loan_type(),
+                  customer_1.get_loan().get_loan_amount(),
+                  customer_1.get_loan().get_interest_rate()]
+        approved_loans_dict[str(customer_1.get_customer_id())] = to_add
+        json.dump(approved_loans_dict, f)
 
 except InvalidLoanType:
     print("Invalid Loan Type")
